@@ -1,8 +1,5 @@
 use std::io::{self, BufRead};
-
-static MAX_RED: i32 = 12;
-static MAX_GREEN: i32 = 13;
-static MAX_BLUE: i32 = 14;
+use std::cmp::{max};
 
 struct GameSet {
     red: i32,
@@ -61,25 +58,18 @@ fn new_game(inlet: String) -> Game {
     return game;
 }
 
-fn is_valid(game: &Game) -> bool {
+fn power_set(game: &Game) -> i32 {
+    let mut min_red: i32 = 0;
+    let mut min_green: i32 = 0;
+    let mut min_blue: i32 = 0;
+
     for set in &game.sets {
-        if set.red > MAX_RED || set.green > MAX_GREEN || set.blue > MAX_BLUE {
-            return false;
-        }
+        min_red = max(min_red, set.red);
+        min_green = max(min_green, set.green);
+        min_blue = max(min_blue, set.blue);
     }
 
-    return true;
-}
-
-fn write_game(game: &Game) {
-    println!("---");
-    println!("id: {}", game.id);
-    println!("sets:");
-    for set in &game.sets {
-        println!("- red: {}", set.red);
-        println!("  green: {}", set.green);
-        println!("  blue: {}", set.blue);
-    }
+    return min_red * min_green * min_blue;
 }
 
 fn main() {
@@ -92,10 +82,7 @@ fn main() {
         inlet = line.unwrap();
         if inlet.len() > 0 {
             game = new_game(inlet.clone());
-            if is_valid(&game) {
-                result += game.id;
-            }
-            // write_game(&game);
+            result += power_set(&game);
         }
 	}
 

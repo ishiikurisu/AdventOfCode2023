@@ -13,80 +13,68 @@
 		(let [line (read-line)]
 			(if (-> line count pos?)
 				(recur (inc n)
-							 (conj inlet {:line-number n
-														:line line}))
+							 (conj inlet line))
 				inlet))))
 
-(defn has-component? [schematic]
-	(if (-> schematic count pos?)
-    (->> schematic
-         (map #(and (not= \. %)
-                    (not= \1 %)
-                    (not= \2 %)
-                    (not= \3 %)
-                    (not= \4 %)
-                    (not= \5 %)
-                    (not= \6 %)
-                    (not= \7 %)
-                    (not= \8 %)
-                    (not= \9 %)
-                    (not= \0 %)))
-         (every? false?)
-         not)
-		false))
+(defn within-gear [part gear]
+  (let [left-boundary (-> gear (get :start) dec)
+        right-boundary (-> gear (get :end) inc)
+        part-start (get part :start)
+        part-end (get part :end)]
+    (or (and (< left-boundary part-start) (> right-boundary part-start))
+        (and (< left-boundary part-end) (> right-boundary part-end))
+        (and (< part-start left-boundary) (> part-end right-boundary)))))
 
-(comment
-  (has-component? ".....21455...")
-  (has-component? "...#.21455..."))
+(defn get-nearby-parts [gear parts-by-line line-number line-count]
+  (let [within-gear-f #(within-gear % gear)
+        previous-line-parts (if (pos? line-number)
+                              (filter within-gear-f
+                                      (nth parts-by-line (dec line-number)))
+                              [])
+        current-line-parts (filter within-gear-f
+                                   (nth parts-by-line line-number))
+        next-line-parts (if (< (inc line-number) line-count)
+                          (filter within-gear-f
+                                  (nth parts-by-line (inc line-number)))
+                          [])]
+    (flatten (conj previous-line-parts
+                   current-line-parts
+                   next-line-parts))))
 
-(defn evaluate-match [match line-number inlet]
-	(let [start (get match :start)
-				end (get match :end)
-				line-length (-> inlet first (get :line) count)
-        left-boundary (max 0 (dec start))
-        right-boundary (min line-length (inc end))
-				previous-string (if (pos? line-number)
-								   			  (-> inlet
-                              (nth (dec line-number))
-                              (get :line)
-													    (subs left-boundary right-boundary))
-											    "")
-        current-string (-> inlet
-                           (nth line-number)
-                           (get :line)
-                           (subs left-boundary right-boundary))
-        next-string (if (< (inc line-number) (count inlet))
-                      (-> inlet
-                          (nth (inc line-number))
-                          (get :line)
-                          (subs left-boundary right-boundary))
-                      "")
-        is-component? (or (has-component? previous-string)
-                          (has-component? current-string)
-                          (has-component? next-string))]
-		(assoc match :is-component? is-component?)))
-
-(defn evaluate-line [sample inlet]
-	(let [line-number (:line-number sample)
-				line (:line sample)
-				matches (re-seq-pos #"\d+" line)]
-		(->> matches
-				 (map #(evaluate-match % line-number inlet)))))
+(defn spy [it]
+  (println it)
+  it)
 
 (defn evaluate-input [inlet]
-	(->> inlet
-			 (map #(evaluate-line % inlet))
-			 flatten
-			 (filter #(get % :is-component?))
-			 (map #(get % :group))
-			 (map #(Integer/parseInt %))
-			 (apply +)))
+  (let [parts-by-line (map #(re-seq-pos #"\d+" %) inlet)
+        gears-by-line (map #(re-seq-pos #"\*" %) inlet)
+        line-count (count inlet)]
+    (->> gears-by-line
+         (map-indexed (fn [line-number gears]
+                        (map (fn [gear]
+                               (assoc gear
+                                      :parts
+                                      (get-nearby-parts gear
+                                                        parts-by-line
+                                                        line-number
+                                                        line-count))) 
+                             gears)))
+         flatten
+         (map #(get % :parts))
+         (filter #(= 2 (count %)))
+         (map (fn [parts]
+                (map (fn [part]
+                       (-> part
+                           (get :group)
+                           Integer/parseInt))
+                     parts)))
+         (map #(apply * %))
+         (apply +))))
 
 (defn main []
 	(let [inlet (read-input)
 				outlet (evaluate-input inlet)]
-		(println outlet)
-		))
+		(println outlet)))
 
 (main)
 

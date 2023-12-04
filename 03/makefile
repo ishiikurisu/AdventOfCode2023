@@ -3,5 +3,6 @@ default: run-clj
 
 .PHONY: run-clj
 run-clj:
-	bb main.clj  < input.txt
+	time bb main.clj < sample.txt
+	time bb main.clj < input.txt
 

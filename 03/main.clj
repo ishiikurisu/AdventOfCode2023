@@ -17,51 +17,54 @@
 														:line line}))
 				inlet))))
 
-(defn has-component? [stuff]
-	(if (-> stuff count pos?)
-		(-> stuff
-				count
-				pos?)
+(defn has-component? [schematic]
+	(if (-> schematic count pos?)
+    (->> schematic
+         (map #(and (not= \. %)
+                    (not= \1 %)
+                    (not= \2 %)
+                    (not= \3 %)
+                    (not= \4 %)
+                    (not= \5 %)
+                    (not= \6 %)
+                    (not= \7 %)
+                    (not= \8 %)
+                    (not= \9 %)
+                    (not= \0 %)))
+         (every? false?)
+         not)
 		false))
 
+(comment
+  (has-component? ".....21455...")
+  (has-component? "...#.21455..."))
+
 (defn evaluate-match [match line-number inlet]
-	(println "---")
 	(let [start (get match :start)
 				end (get match :end)
-				line-length (-> inlet first count)
-				north-string (if (pos? line-number)
-											 (-> (nth inlet (dec line-number))
-													 (subs (max 0 (dec start))
-																 (min (inc end) line-length)))
-											 "")
-				south-string (if (< (inc line-number) (count inlet))
-											 (-> (nth inlet (inc line-number))
-													 (subs (max 0 (dec start))
-																 (min (inc  end) line-length)))
-											 "")
-				west-string (if (-> start dec pos?)
-											(-> (nth inlet line-number)
-													(subs (dec start)
-																start))
-											"")
-				east-string (if (-> end inc (< line-length))
-											(-> (nth inlet line-number)
-													(subs end
-																(inc end)))
-											"")
-				_ (println north-string)
-				_ (println south-string)
-				_ (println west-string)
-				_ (println east-string)
-				has-north-component (has-component? north-string)
-				has-south-component (has-component? south-string)
-				has-east-component (has-component? east-string)
-				has-west-component (has-component? west-string)
-				is-component (or has-north-component
-												 has-south-component
-												 has-east-component
-												 has-west-component)]
-		(assoc match :is-component is-component)))
+				line-length (-> inlet first (get :line) count)
+        left-boundary (max 0 (dec start))
+        right-boundary (min line-length (inc end))
+				previous-string (if (pos? line-number)
+								   			  (-> inlet
+                              (nth (dec line-number))
+                              (get :line)
+													    (subs left-boundary right-boundary))
+											    "")
+        current-string (-> inlet
+                           (nth line-number)
+                           (get :line)
+                           (subs left-boundary right-boundary))
+        next-string (if (< (inc line-number) (count inlet))
+                      (-> inlet
+                          (nth (inc line-number))
+                          (get :line)
+                          (subs left-boundary right-boundary))
+                      "")
+        is-component? (or (has-component? previous-string)
+                          (has-component? current-string)
+                          (has-component? next-string))]
+		(assoc match :is-component? is-component?)))
 
 (defn evaluate-line [sample inlet]
 	(let [line-number (:line-number sample)
@@ -74,7 +77,7 @@
 	(->> inlet
 			 (map #(evaluate-line % inlet))
 			 flatten
-			 (filter #(get % :is-component))
+			 (filter #(get % :is-component?))
 			 (map #(get % :group))
 			 (map #(Integer/parseInt %))
 			 (apply +)))

@@ -1,11 +1,12 @@
 use std::io::{self, BufRead};
+use std::cmp::{min};
 
 const WINNING_SET_SIZE: usize = 100;
 
 fn new_empty_winning_set(size: usize) -> Vec<bool> {
     let mut winning_set: Vec<bool> = Vec::new();
 
-    for _ in 0..size {
+    for _ in 0 .. size {
         winning_set.push(false);
     }
 
@@ -32,11 +33,7 @@ fn evaluate_line(inlet: String) -> i32 {
         if raw_playing_number.len() > 0 {
             number = raw_playing_number.parse::<i32>().unwrap() - 1;
             if winning_set[number as usize] == true {
-                outlet = if outlet == 0 {
-                    0x1
-                } else {
-                    outlet << 0x1
-                }
+                outlet += 1;
             }
         }
     }
@@ -47,14 +44,38 @@ fn evaluate_line(inlet: String) -> i32 {
 fn main() {
     let stdin = io::stdin();
     let mut inlet: String;
+    let mut score: i32;
+    let mut no_copies: i32;
     let mut outlet: i32 = 0;
+    let mut points: Vec<i32> = Vec::new();
+    let mut copies: Vec<i32> = Vec::new();
+    let mut total_cards: i32 = 0;
+    let mut from_index: i32;
+    let mut to_index: i32;
 
 	for line in stdin.lock().lines() {
         inlet = line.unwrap();
         if inlet.len() > 0 {
-            outlet += evaluate_line(inlet.clone());
+            score = evaluate_line(inlet.clone());
+            points.push(score);
+            copies.push(1);
+            total_cards += 1;
         }
 	}
+
+    for i in 0 .. total_cards {
+        score = points[i as usize];
+        no_copies = copies[i as usize];
+        from_index = i + 1;
+        to_index = min(total_cards, i + 1 + score);
+        for j in from_index .. to_index {
+            copies[j as usize] += no_copies;
+        }
+    }
+
+    for i in 0 .. total_cards {
+        outlet += copies[i as usize];
+    }
 
     println!("{}", outlet);
 }

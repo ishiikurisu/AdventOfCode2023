@@ -1,61 +1,51 @@
-def read_map
-  map_name = gets.chomp.split(" ")[0]
-  map = {}
-
-  line = gets.chomp
-  while line.length > 0 do
-    destination, source, length = line.split(" ").collect{|s| s.to_i}
-    for i in 0...length do
-      map[source + i] = destination + i
-    end
-    line = gets.chomp
-  end
-
-  return map_name, map
-end
-
-def find_location seed, steps, maps
-  location = seed
-
-  steps.each do |step|
-    map = maps[step]
-    location = (map.key? location)? map[location] : location
-  end
-
-  return location
-end
-
 def main
   seeds = gets.chomp.split(": ")[1].split(" ").collect{|s| s.to_i}
   gets
-  maps = {}
-  steps = []
-  
+  seed_data = []
+  seeds.each do |seed|
+    seed_data << {
+      "location" => seed,
+      "moved" => false,
+    }
+  end
+
+  first_line = true
   loop do
     begin
-      map_name, map = read_map
-      maps[map_name] = map
-      steps << map_name
+      line = gets.chomp
+      if first_line
+        first_line = false
+      elsif line.length == 0
+        first_line = true
+        seed_data.each do |data|
+          data["moved"] = false
+        end
+      else
+        destination, source, length = line.split(" ").collect{|s| s.to_i}
+        seed_data.each do |data|
+          location = data["location"]
+          moved = data["moved"]
+          within_range = location >= source && location <= source + length
+          if within_range and not moved
+            data["location"] = destination + location - source
+            data["moved"] = true
+          end
+        end
+      end
     rescue
       break
     end
   end
 
-  locations = {}
-  seeds.each do |seed|
-    locations[seed] = find_location seed, steps, maps
-  end
-
-  result_seed = nil
-  result_location = nil
-  locations.each do |seed, location|
-    if result_location.nil? || location < result_location
-      result_seed = seed
-      result_location = location
+  min_location = nil
+  seed_data.each do |data|
+    location = data["location"]
+    if min_location.nil? || location < min_location
+      min_location = location
     end
   end
 
-  puts result_location
+  puts min_location
 end
 
 if __FILE__ == $0

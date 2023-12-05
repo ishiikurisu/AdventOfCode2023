@@ -3,6 +3,6 @@ default: run
 
 .PHONY: run
 run:
-	time ruby main.rb < sample.txt
-	time ruby main.rb < input.txt
+	time clj main.clj < sample.txt
+	time clj main.clj < input.txt
 

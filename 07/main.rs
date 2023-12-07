@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::cmp::Ordering;
 
 struct Game {
-    cards: Vec<Vec<i32>>,
     bid: i32,
     score: i32,
     hand: String,
@@ -58,41 +57,67 @@ fn compare_card_scores(a: &Vec<i32>, b: &Vec<i32>) -> Ordering {
     };
 }
 
+fn assign_score(card_counts: &Vec<i32>) -> i32 {
+    return if card_counts[0] == 5 {
+        7
+    } else if card_counts[0] == 4 {
+        6
+    } else if card_counts[0] == 3 && card_counts[1] == 2 {
+        5
+    } else if card_counts[0] == 3 && card_counts[1] == 1 {
+        4
+    } else if card_counts[0] == 2 && card_counts[1] == 2 {
+        3
+    } else if card_counts[0] == 2 && card_counts[1] == 1 {
+        2
+    } else {
+        1
+    };
+}
+
 fn parse_game(inlet: String) -> Game {
     let game: Game;
     let fields: Vec<&str> = inlet.split(" ").collect();
     let hand: String = fields[0].to_string();
     let bid: i32 = fields[1].parse().unwrap();
     let mut card_count: Vec<i32> = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].into_iter().collect();
-    let score: i32;
-    let mut scores: Vec<i32>;
+    let mut score: i32;
+    let mut maybe_score: i32;
+    let mut card_counts: Vec<i32>;
     let mut cards: Vec<Vec<i32>> = Vec::new();
     let mut card_count_pair: Vec<i32>;
     let card_to_index: HashMap<char, usize> = new_card_to_index();
+    let mut joker_count: i32 = 0;
 
     for card in hand.chars() {
-        card_count[card_to_index[&card]] += 1;
+        if card == 'J' {
+            joker_count += 1;
+        } else {
+            card_count[card_to_index[&card]] += 1;
+        }
     }
 
     // creating score cache
-    scores = card_count.clone().into_iter().collect();
-    scores.sort();
-    scores.reverse();
-    score = if scores[0] == 5 {
-        7
-    } else if scores[0] == 4 {
-        6
-    } else if scores[0] == 3 && scores[1] == 2 {
-        5
-    } else if scores[0] == 3 && scores[1] == 1 {
-        4
-    } else if scores[0] == 2 && scores[1] == 2 {
-        3
-    } else if scores[0] == 2 && scores[1] == 1 {
-        2
-    } else {
-        1
-    };
+    card_counts = card_count.clone().into_iter().collect();
+    card_counts.sort();
+    card_counts.reverse();
+    score = assign_score(&card_counts);
+    if joker_count > 0 {
+        // FIXME a joker can be added to more than one card
+        for j in 0..=joker_count {
+            for i in 0..13 {
+                card_count[i] += j;
+                card_counts = card_count.clone().into_iter().collect();
+                card_counts.sort();
+                card_counts.reverse();
+                maybe_score = assign_score(&card_counts);
+                if maybe_score > score {
+                    score = maybe_score; 
+                }
+                card_counts[i] -= j;
+            }
+        }
+    }
 
     // creating card order cache
     for (card, count) in card_count.clone().into_iter().enumerate() {
@@ -105,7 +130,6 @@ fn parse_game(inlet: String) -> Game {
     cards.reverse();
 
     game = Game {
-        cards,
         bid,
         score,
         hand,

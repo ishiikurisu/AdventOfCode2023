@@ -42,21 +42,6 @@ fn compare_games(a: &Game, b: &Game) -> Ordering {
     return Ordering::Equal;
 }
 
-fn compare_card_scores(a: &Vec<i32>, b: &Vec<i32>) -> Ordering {
-    // a, b are [card, count]
-    return if a[1] > b[1] {
-        Ordering::Greater
-    } else if a[1] < b[1] {
-        Ordering::Less
-    } else if a[0] > b[0] {
-        Ordering::Greater
-    } else if a[0] < b[0] {
-        Ordering::Less
-    } else {
-        Ordering::Equal
-    };
-}
-
 fn assign_score(card_counts: &Vec<i32>) -> i32 {
     return if card_counts[0] == 5 {
         7
@@ -75,17 +60,41 @@ fn assign_score(card_counts: &Vec<i32>) -> i32 {
     };
 }
 
+fn backtrack_joker_assignment(mut card_count: Vec<i32>, joker_count: i32) -> i32 {
+    let mut card_counts: Vec<i32>;
+    let mut maybe_score: i32;
+    let mut score: i32 = -1;
+
+    if joker_count == 0 {
+        card_counts = card_count.clone().into_iter().collect();
+        card_counts.sort();
+        card_counts.reverse();
+        return assign_score(&card_counts);
+    }
+
+    for i in 0..13 {
+        card_count[i] += 1;
+        if score < 0 {
+            score = backtrack_joker_assignment(card_count.clone(), joker_count - 1);
+        } else {
+            maybe_score = backtrack_joker_assignment(card_count.clone(), joker_count - 1);
+            if maybe_score > score {
+                score = maybe_score
+            }
+        }
+        card_count[i] -= 1;
+    }
+
+    return score;
+}
+
 fn parse_game(inlet: String) -> Game {
     let game: Game;
     let fields: Vec<&str> = inlet.split(" ").collect();
     let hand: String = fields[0].to_string();
     let bid: i32 = fields[1].parse().unwrap();
     let mut card_count: Vec<i32> = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].into_iter().collect();
-    let mut score: i32;
-    let mut maybe_score: i32;
-    let mut card_counts: Vec<i32>;
-    let mut cards: Vec<Vec<i32>> = Vec::new();
-    let mut card_count_pair: Vec<i32>;
+    let score: i32;
     let card_to_index: HashMap<char, usize> = new_card_to_index();
     let mut joker_count: i32 = 0;
 
@@ -97,37 +106,7 @@ fn parse_game(inlet: String) -> Game {
         }
     }
 
-    // creating score cache
-    card_counts = card_count.clone().into_iter().collect();
-    card_counts.sort();
-    card_counts.reverse();
-    score = assign_score(&card_counts);
-    if joker_count > 0 {
-        // FIXME a joker can be added to more than one card
-        for j in 0..=joker_count {
-            for i in 0..13 {
-                card_count[i] += j;
-                card_counts = card_count.clone().into_iter().collect();
-                card_counts.sort();
-                card_counts.reverse();
-                maybe_score = assign_score(&card_counts);
-                if maybe_score > score {
-                    score = maybe_score; 
-                }
-                card_counts[i] -= j;
-            }
-        }
-    }
-
-    // creating card order cache
-    for (card, count) in card_count.clone().into_iter().enumerate() {
-        card_count_pair = Vec::new();
-        card_count_pair.push(card as i32);
-        card_count_pair.push(count);
-        cards.push(card_count_pair);
-    }
-    cards.sort_by(|a, b| compare_card_scores(a, b));
-    cards.reverse();
+    score = backtrack_joker_assignment(card_count.clone(), joker_count);
 
     game = Game {
         bid,

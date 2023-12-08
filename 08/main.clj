@@ -11,26 +11,39 @@
                         [(nth fields 1) (nth fields 2)])))
         graph))))
 
-(defn traverse-graph [commands graph from outlet]
-  (if (= "ZZZ" from)
-    (* outlet (count commands))
-    (let [to (reduce (fn [where command]
-                       (let [options (get graph where)]
-                         (if (= \L command)
-                           (first options)
-                           (second options))))
-                     from
-                     commands)]
-      (traverse-graph commands
-                      graph
-                      to
-                      (inc outlet)))))
+(defn find-starting-nodes [graph]
+  (->> graph
+       keys
+       (filter #(= \A (nth % 2)))))
+
+(defn found-ending-nodes? [nodes]
+  (->> nodes
+       (filter #(= \Z (nth % 2)))
+       count
+       (= (count nodes))))
+
+(defn traverse-graph [commands graph starting-nodes command-size]
+  (loop [outlet 0
+         nodes starting-nodes]
+    (if (found-ending-nodes? nodes)
+      outlet
+      (recur (inc outlet)
+             (map (fn [node]
+                    (let [command (nth commands (mod outlet command-size))
+                          options (get graph node)]
+                      (if (= \L command)
+                        (first options)
+                        (second options))))
+                  nodes)))))
 
 (defn main []
   (let [commands (read-line)
         _ (read-line)
-        graph (read-graph)]
-    (println (traverse-graph commands graph "AAA" 0))))
+        graph (read-graph)
+        starting-nodes (find-starting-nodes graph)
+        command-size (count commands)]
+    (println (traverse-graph commands graph starting-nodes command-size))
+    ))
 
 (main)
 

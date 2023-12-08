@@ -3,6 +3,7 @@ default: run-clj
 
 .PHONY: run-clj
 run-clj:
-	bb main.clj < sample.txt
-	bb main.clj < input.txt
+	clj main.clj < sample.txt
+	clj main.clj < input.txt > output.txt
+	cat output.txt
 

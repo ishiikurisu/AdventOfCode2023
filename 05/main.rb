@@ -6,18 +6,18 @@ def main
   is_first_seed = true
   first_seed = nil
   setup_data.each do |number|
-    if is_first_seed
+    if is_first_seed then
       is_first_seed = false
       first_seed = number
     else
-      for i in 0..number do
-        seed_data << [first_seed + i, false]
-      end
+      seed_data << [first_seed, number]
       is_first_seed = true
     end
   end
 
   first_line = true
+  all_mappings = []
+  mappings = []
   loop do
     begin
       line = gets.chomp
@@ -25,22 +25,10 @@ def main
         first_line = false
       elsif line.length == 0
         first_line = true
-        seed_data.each do |data|
-          data[1] = false
-        end
+        all_mappings << mappings
+        mappings = []
       else
-        destination, source, length = line.split(" ").collect{|s| s.to_i}
-        next_seed_data = []
-        seed_data.each do |data|
-          location, moved = data
-          within_range = location >= source && location <= source + length
-          if within_range and not moved then
-            next_seed_data << [destination + location - source, true]
-          else
-            next_seed_data << data
-          end
-        end
-        seed_data = next_data
+        mappings << line.split(" ").collect{|s| s.to_i}
       end
     rescue
       break
@@ -48,10 +36,26 @@ def main
   end
 
   min_location = nil
-  seed_data.each do |data|
-    location = data[0]
-    if min_location.nil? || location < min_location
-      min_location = location
+  seed_data.each do |first_seed, length|
+    for i in 0...length do
+      location = first_seed + i
+      
+      all_mappings.each do |mappings|
+        applied = false
+        mappings.each do |destination, source, length|
+          unless applied then
+            within_range = location >= source && location <= source + length
+            if within_range == true then
+              applied = true
+              location = destination + location - source
+            end
+          end
+        end
+      end
+
+      if min_location.nil? || location < min_location then
+        min_location = location
+      end
     end
   end
 

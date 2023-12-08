@@ -12,7 +12,7 @@ struct Game {
 fn new_card_to_index() -> HashMap<char, usize> {
     let mut card_to_index: HashMap<char, usize> = HashMap::new();
 
-    for (i, c) in "23456789TJQKA".chars().enumerate() {
+    for (i, c) in "J23456789TQKA".chars().enumerate() {
         card_to_index.insert(c, i);
     }
 
@@ -73,16 +73,18 @@ fn backtrack_joker_assignment(mut card_count: Vec<i32>, joker_count: i32) -> i32
     }
 
     for i in 0..13 {
-        card_count[i] += 1;
-        if score < 0 {
-            score = backtrack_joker_assignment(card_count.clone(), joker_count - 1);
-        } else {
-            maybe_score = backtrack_joker_assignment(card_count.clone(), joker_count - 1);
-            if maybe_score > score {
-                score = maybe_score
+        if i != 0 {
+            card_count[i] += 1;
+            if score < 0 {
+                score = backtrack_joker_assignment(card_count.clone(), joker_count - 1);
+            } else {
+                maybe_score = backtrack_joker_assignment(card_count.clone(), joker_count - 1);
+                if maybe_score > score {
+                    score = maybe_score
+                }
             }
+            card_count[i] -= 1;
         }
-        card_count[i] -= 1;
     }
 
     return score;

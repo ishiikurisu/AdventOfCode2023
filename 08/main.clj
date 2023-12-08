@@ -11,32 +11,26 @@
                         [(nth fields 1) (nth fields 2)])))
         graph))))
 
-(defn traverse-graph [commands graph from memo outlet]
-  (cond
-    (true? (get memo from))
-      nil
-    (= "ZZZ" from)
-      (* outlet (count commands))
-    :else
-      (let [to (reduce (fn [where command]
-                         (let [options (get graph where)]
-                           (if (= \L command)
-                             (first options)
-                             (second options))))
-                       from
-                       commands)]
-        (traverse-graph commands
-                        graph
-                        to
-                        (assoc memo from true)
-                        (inc outlet)))))
+(defn traverse-graph [commands graph from outlet]
+  (if (= "ZZZ" from)
+    (* outlet (count commands))
+    (let [to (reduce (fn [where command]
+                       (let [options (get graph where)]
+                         (if (= \L command)
+                           (first options)
+                           (second options))))
+                     from
+                     commands)]
+      (traverse-graph commands
+                      graph
+                      to
+                      (inc outlet)))))
 
 (defn main []
   (let [commands (read-line)
         _ (read-line)
         graph (read-graph)]
-    (println (traverse-graph commands graph "AAA" {} 0))
-    ))
+    (println (traverse-graph commands graph "AAA" 0))))
 
 (main)
 

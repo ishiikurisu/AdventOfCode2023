@@ -2,7 +2,7 @@ def all_zeroes? inlet
   inlet.all?{|x| x == 0}
 end
 
-def find_next_value(inlet)
+def find_previous_value(inlet)
   if all_zeroes? inlet then
     return 0
   end
@@ -10,7 +10,7 @@ def find_next_value(inlet)
   for i in 1...inlet.length do
     next_inlet << inlet[i] - inlet[i-1]
   end
-  return inlet[-1] + find_next_value(next_inlet)
+  return inlet [0] - find_previous_value(next_inlet)
 end
 
 def main
@@ -18,7 +18,7 @@ def main
   loop do
     begin
       line = gets.chomp
-      outlet += find_next_value line.split(" ").collect{|x| x.to_i}
+      outlet += find_previous_value line.split(" ").collect{|x| x.to_i}
     rescue
       break
     end

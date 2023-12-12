@@ -1,3 +1,10 @@
+def read line
+  f = line.split(' ')
+  a = [f[0], f[0], f[0], f[0], f[0]].join "?"
+  b = [f[1], f[1], f[1], f[1], f[1]].join ","
+  return "#{a} #{b}"
+end
+
 def is_valid? arrangement, target_arrangement
   hash_counts = arrangement.split(/\.+/).select{|s| s.length > 0}.collect{|s| s.length}
 
@@ -46,10 +53,11 @@ end
 
 def main
   outlet = 0
-  inlet = gets
-  until inlet.nil? do
-    outlet += evaluate inlet.chomp
-    inlet = gets
+  line = gets
+  until line.nil? do
+    inlet = read line.chomp
+    outlet += evaluate inlet
+    line = gets
   end
   puts outlet
 end

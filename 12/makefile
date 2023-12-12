@@ -1,8 +1,9 @@
 .PHONY: default
-default: run-rust
+default: run-ruby
 
-.PHONY: run-rust
-run-rust:
+.PHONY: run-ruby
+run-ruby:
 	ruby main.rb < sample.txt
-	ruby main.rb < input.txt
+	ruby main.rb < input.txt > output.txt
+	cat output.txt
 
